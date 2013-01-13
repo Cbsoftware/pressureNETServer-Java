@@ -193,59 +193,13 @@ public class BarometerServlet extends HttpServlet {
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				out.print("analysis_all_trends return;");
-				
-				
-				// TODO: run periodically
- 				// analysis.getTrendsInWindows(dh); calculate and store the trends
-				
-				/*
-				ArrayList<TrendWindow> trendWindows = dh.getTrends(); 
-				
-				int x = 0;
-				for(TrendWindow trendWindow : trendWindows) {
-					
-					out.print(trendWindow.window);
-					out.print(",");
-					
-					// convert string trends to numbers :s
-					if(trendWindow.trend.equals("--")) {
-						out.print(0);
-					} 
-					
-					out.print(";");
-				}
-				*/
+			
 				out.close();
-				
-			} else {
 				
 			}
-			
 		} else if(params.containsKey("statistics")) {
 			log.info("statistics " + params.get("statistics")[0]);
-			if(params.get("statistics")[0].equals("full_archive")) {
-				String allStats = dh.generateStatisticsFromArchive();
-				response.setContentType("text/html");
-				PrintWriter out = response.getWriter();
-				out.print(allStats);
-				out.close();
-			} else if(params.get("statistics")[0].equals("recent_archive")) {
-				if(params.containsKey("days")) {
-					String days = params.get("days")[0];
-					//log.info("recent data: " + days);
-					String allStats = dh.generateRecentStatisticsFromArchive(days);
-					response.setContentType("text/html");
-					PrintWriter out = response.getWriter();
-					out.print(allStats);
-					out.close();
-				}
-			} else if(params.get("statistics")[0].equals("all_users")) {
-				String allStats = dh.generateStatisticsForUsers();
-				response.setContentType("text/html");
-				PrintWriter out = response.getWriter();
-				out.print(""); // don't return the stats.
-				out.close();
-			} else if(params.get("statistics")[0].equals("by_user")) {
+			if(params.get("statistics")[0].equals("by_user")) {
 				if(params.containsKey("user_id")) {
 					long sinceWhen = 0L;
 					String units = "";
@@ -301,16 +255,6 @@ public class BarometerServlet extends HttpServlet {
 				String data = dh.getUserCSV(id);
 				String file = headings + "\n" + data;
 				
-				// zip the file
-				/*
-				CRC32 crc = new CRC32();
-				ZipEntry entry = new ZipEntry("userdata.csv");
-				entry.setSize(file.length());
-				crc.reset();
-				crc.update(file.getBytes());
-				entry.setCrc(crc.getValue());
-				*/
-				
 				response.setContentType("text/html");
 				//response.setContentType("application/zip");
 				PrintWriter out = response.getWriter();
@@ -348,7 +292,8 @@ public class BarometerServlet extends HttpServlet {
 			   br.getReading() + "," +
 			   br.getTime() + "," +
 			   br.getTimeZoneOffset() + "," +
-			   br.getAndroidId() + ";";
+			   br.getAndroidId() + "," +
+			   br.getSharingPrivacy() + ";";
 	}
 	
 	// Prepare data to send through the web. Decoded by
@@ -372,6 +317,7 @@ public class BarometerServlet extends HttpServlet {
 		br.setTimeZoneOffset(Integer.parseInt(params.get("tzoffset")[0]));
 		br.setReading(Double.parseDouble(params.get("reading")[0]));
 		br.setAndroidId((params.get("text")[0]));
+		br.setSharingPrivacy((params.get("share")[0]));
 		
 		return br;
 	}

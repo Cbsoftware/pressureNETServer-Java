@@ -3,8 +3,6 @@ package ca.cumulonimbus.barometer;
 import java.io.Serializable;
 
 
-
-
 /**
  * Hold data on a single barometer reading.
  * @author jacob
@@ -19,6 +17,7 @@ public class BarometerReading implements Serializable {
 	int timeZoneOffset;
 	String androidId;
 	Tendency tendency;
+	String sharingPrivacy;
 	
 
 	public Tendency createTendency(String ten) {
@@ -52,13 +51,20 @@ public class BarometerReading implements Serializable {
 		this.tendency = tendency;
 	}
 	
+	public String getSharingPrivacy() {
+		return sharingPrivacy;
+	}
+	public void setSharingPrivacy(String sharingPrivacy) {
+		this.sharingPrivacy = sharingPrivacy;
+	}
 	public String toString() {
 		String ret = "Reading: " + reading + "\n" +
 					 "Latitude: " + latitude + "\n" + 
 				     "Longitude: " + longitude + "\n" +
 				     "ID: " + androidId + "\n" +
 				     "Time: " + time + "\n" +
-				     "TZOffset: " + timeZoneOffset + "\n"; 
+				     "TZOffset: " + timeZoneOffset + "\n" +
+				     "Share: " + sharingPrivacy + "\n"; 
 		
 		return ret;
 	}

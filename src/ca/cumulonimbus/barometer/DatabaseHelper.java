@@ -50,38 +50,41 @@ public class DatabaseHelper {
 			log.info("adding a reading. existing entries for id: " + readings.size());
 			if(readings.size() > 0) {
 				// Exists. Update.
-				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=? WHERE text=?");
+				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=?, privacy=? WHERE text=?");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
 				pstmt.setDouble(4, reading.getReading());
 				pstmt.setInt(5, reading.getTimeZoneOffset());
 				pstmt.setString(6, reading.getAndroidId());
+				pstmt.setString(7, reading.getSharingPrivacy());
 				pstmt.execute();
-				log.info("updating " + reading.getAndroidId() + " to " + reading.getReading());
+				//log.info("updating " + reading.getAndroidId() + " to " + reading.getReading());
 			} else {
 				// Doesn't exist. Insert a new row.
-				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text) values (?, ?, ?, ?, ?, ?)");
+				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text, privacy) values (?, ?, ?, ?, ?, ?, ?)");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
 				pstmt.setDouble(4, reading.getReading());
 				pstmt.setInt(5, reading.getTimeZoneOffset());
 				pstmt.setString(6, reading.getAndroidId());
+				pstmt.setString(7, reading.getSharingPrivacy());
 				pstmt.execute();
-				log.info("inserting new " + reading.getAndroidId());
+				//log.info("inserting new " + reading.getAndroidId());
 			}
 			
 			// Either way, add it to the archive.
-			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text) values (?, ?, ?, ?, ?, ?)");
+			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text, privacy) values (?, ?, ?, ?, ?, ?, ?)");
 			pstmt.setDouble(1, reading.getLatitude());
 			pstmt.setDouble(2, reading.getLongitude());
 			pstmt.setDouble(3, reading.getTime());
 			pstmt.setDouble(4, reading.getReading());
 			pstmt.setInt(5, reading.getTimeZoneOffset());
 			pstmt.setString(6, reading.getAndroidId());
+			pstmt.setString(7, reading.getSharingPrivacy());
 			pstmt.execute();
-			log.info("archiving " + reading.getAndroidId());
+			//log.info("archiving " + reading.getAndroidId());
 			
 			return true;
 		} catch(SQLException sqle) {
@@ -184,42 +187,6 @@ public class DatabaseHelper {
 		}
 	}
 	
-	// Return tendency in simple terms for a given list of barometer readings
-	/*
-	public String getSimpleTendencyFromBRs(ArrayList<BarometerReading> list) {
-		ArrayList<Double> readings = new ArrayList<Double>();
-		try {
-			String tendency = "Unknown";
-			// ignore anything older than 5 hours, look for delta 
-			// greater than 3.5 mbar
-			
-			return tendency;
-		} catch(Exception e) {
-			return "Unknown";
-		}
-	}
-	*/
-	
-	public String listOfReadingsToHTMLStats(ArrayList<BarometerReading> archive) {
-		String htmlStats = "";
-		ArrayList<UserCollection> users = new ArrayList<UserCollection>();
-
-		users = getUCFromArchive(archive);
-		
-		// Prepare for the htmlStats
-		int usersWithMultipleSubmits = findMultipleSubmissions(users);
-		int newReadingsToday = findNewReadings(archive, 1);
-		int newReadingsLastWeek = findNewReadings(archive, 7);
-		String serverURL = ""; // BarometerServlet?statistics=all_users
-		
-		htmlStats = "Total readings: " + archive.size() + "<br/>";
-		htmlStats += "Unique users: " + users.size() + "<br/>";
-		htmlStats += "Users with two or more readings: " + usersWithMultipleSubmits + "<br/>";
-		htmlStats += "New readings (last 24h): " + newReadingsToday + "<br/>";
-		htmlStats += "New readings (last 7 days): " + newReadingsLastWeek + "<br/>";
-		
-		return htmlStats;
-	}
 	
 	private int findNewReadings(ArrayList<BarometerReading> archive, int days) {
 		int total = 0;
@@ -290,35 +257,6 @@ public class DatabaseHelper {
 		return false;
 	}
 	
-	// Return a set of useful information from all the data in the archive
-	public String generateStatisticsFromArchive() {
-		String statistics = "";
-		if(!connected) {
-			connectToDatabase();
-		}
-		try {
-			pstmt = db.prepareStatement("select * from archive");
-			ResultSet rs = pstmt.executeQuery();
-			ArrayList<BarometerReading> archive = new ArrayList<BarometerReading>();
-			while(rs.next()) {
-				archive.add(resultSetToBarometerReading(rs));
-			}
-			statistics = listOfReadingsToHTMLStats(archive);
-		} catch(SQLException sqle) {
-			log.info(sqle.getMessage());
-			statistics = "An error occured: " + sqle.getMessage();
-		}
-		
-		return statistics;
-	}
-	
-	// user is viewing a graph with their own statistics
-	// to be included on the same screen.
-	public String getUserStatistics(String userId) {
-		
-		return "";
-	}
-	
 	// use Google Charts
 	public String getChartFromSingleUser(String userId, long sinceWhen, String units) {
 		String html = "";
@@ -337,7 +275,6 @@ public class DatabaseHelper {
 	}
 	
 	// Get all a user's info and return it in CSV
-	
 	public String getUserCSV(String userId) {
 		if(!connected) {
 			connectToDatabase();
@@ -612,44 +549,13 @@ public class DatabaseHelper {
 			while(rs.next()) {
 				readingsList.add(resultSetToBarometerReading(rs));
 			}
-			//return fudgeGPSData(readingsList);
-			return readingsList;
+			return fudgeGPSData(readingsList);
+			//return readingsList;
 		} catch(SQLException sqle) {
 			log.info(sqle.getMessage());
 			return null;
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	// Reading is stored in millibars. Convert to user-preferred unit.
 	public double convertFromMbarsToCustomUnits(double reading, String units) {
@@ -670,6 +576,7 @@ public class DatabaseHelper {
 			br.setTime(rs.getDouble("daterecorded"));
 			br.setTimeZoneOffset(rs.getInt("tzoffset"));
 			br.setAndroidId(rs.getString("text"));
+			br.setSharingPrivacy(rs.getString("privacy"));
 			return br;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -689,6 +596,7 @@ public class DatabaseHelper {
 			br.setTime(rs.getDouble("daterecorded"));
 			br.setTimeZoneOffset(rs.getInt("tzoffset"));
 			br.setAndroidId(rs.getString("text"));
+			br.setSharingPrivacy(rs.getString("privacy"));
 			
 			// tendency
 			/*
@@ -721,7 +629,7 @@ public class DatabaseHelper {
 		for(BarometerReading br : readings) {
 			double longitude = br.getLongitude();
 			double latitude = br.getLatitude();
-			double range = .002;
+			double range = .005;
 			latitude = (latitude - range) + (int)(Math.random() * ((2 * range) + 1));
 			longitude = (longitude - range) + (int)(Math.random() * ((2 * range) + 1));
 			br.setLatitude(latitude);
@@ -916,7 +824,7 @@ public class DatabaseHelper {
 			
 			pstmt = db.prepareStatement("CREATE TABLE Trends (id serial,	minlatitude numeric, maxlatitude numeric, minlongitude numeric, maxlongitude numeric, trend varchar(10), archiveid integer)");
 			
-			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200))");
+			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100))");
 			
 			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200))");
 			pstmt.execute();
@@ -943,7 +851,7 @@ public class DatabaseHelper {
 	public void connectToDatabase() {
 		try {
 			Class.forName("org.postgresql.Driver");
-			String url = "jdbc:postgresql://localhost/breadings"; // LIVE: breadings // DEV: dev_archive
+			String url = "jdbc:postgresql://localhost"; // LIVE: breadings // DEV: dev_archive
 			Properties props = new Properties();
 			props.setProperty("user","USER");
 			props.setProperty("password","PASS");
