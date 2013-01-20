@@ -2,11 +2,10 @@ package ca.cumulonimbus.barometer;
 
 
 import java.io.IOException;
-
-import java.util.zip.*;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -15,7 +14,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import ca.cumulonimbus.barometer.ScienceHandler;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 
 public class BarometerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -23,6 +30,7 @@ public class BarometerServlet extends HttpServlet {
 	private static Logger log = Logger.getLogger(logName);
 	
 	String serverURL = ""; 
+	String distributionServerURL = ""; // http://localhost:8000
 	// private static double TENDENCY_HOURS = 12;
 	
 	private static DatabaseHelper dh;
@@ -30,7 +38,37 @@ public class BarometerServlet extends HttpServlet {
 	public BarometerServlet() {
 		dh = new DatabaseHelper();
 	}
-
+	
+	private ArrayList<BarometerReading> bufferToPNDV = new ArrayList<BarometerReading>();
+	private int sendBufferLimit = 100;
+	
+	/**
+	 * Add to the list to send to PNDV. Send if the buffer is large (sendBufferLimit).
+	 * @param br
+	 */
+	public void addToPNDV(BarometerReading br) {
+		bufferToPNDV.add(br);
+		if (bufferToPNDV.size() >= sendBufferLimit) {
+			/*
+			 * To send this data securely and with minimal overhead:
+			 * 1. Send a Request to PNDV telling it we have the data.
+			 * 2. PNDV replies with its own Request.
+			 * 3. We respond with CSVd data in the Response
+			 */
+			
+			// Send the initial notice
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+			HttpGet httpGet = new HttpGet(distributionServerURL);
+			try {
+				HttpResponse responseFromPNDV = httpClient.execute(httpGet);
+			} catch (ClientProtocolException cpe) {
+				log.info(cpe.getMessage());
+			} catch(IOException ioe) {
+				log.info(ioe.getMessage());
+			}
+		}
+	}
+	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doPost(request, response);
 	}
@@ -59,15 +97,14 @@ public class BarometerServlet extends HttpServlet {
 						//out.print(barometerReadingToWeb(br));
 					//}
 				} catch(Exception e) {
-					log.info(e.getMessage());
+					log(e.getMessage());
 				}
 
 				out.close();
 			} else if (params.get("download")[0].equals("recent_data")) {
-				log.info(params.containsKey("days") + "");
+				//log(params.containsKey("days") + "");
 				if(params.containsKey("days")) {
 					String days = params.get("days")[0];
-					log.info("recent data: " + days);
 					int numOfDays = Integer.valueOf(days);
 					
 					ArrayList<BarometerReading> recentReadings = dh.getRecentReadings(numOfDays);
@@ -79,7 +116,7 @@ public class BarometerServlet extends HttpServlet {
 							out.print(barometerReadingToWeb(br));
 						}
 					} catch(Exception e) {
-						log.info(e.getMessage());
+						log(e.getMessage());
 					}
 					out.close();
 				}
@@ -262,6 +299,29 @@ public class BarometerServlet extends HttpServlet {
 				out.close();
 				
 			}
+		} else if (params.containsKey("pndv")) {
+			String pndv = params.get("pndv")[0];
+			if (pndv.equals("buffer")) {
+				// PNDV is requesting recent buffered data. Send it!
+				
+				// Send the data dump inside the response
+				// Should be sent as CSV or XML probably.
+				// ...HTML for now
+				try {
+					response.setContentType("text/html");
+					PrintWriter out = response.getWriter();
+					for (BarometerReading br : bufferToPNDV) {
+						out.print(barometerReadingToWeb(br));
+					}
+					out.close();
+					
+					// clear the buffer
+					bufferToPNDV.clear();
+				} catch (Exception e)
+				{
+					// ...
+				}
+			}
 		} else { 
 			try {
 				// This is #1.
@@ -274,12 +334,20 @@ public class BarometerServlet extends HttpServlet {
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				
+				out.close();
+				
+				// TO PNDV!
+				// Send the measurement to the distribution servers
+				addToPNDV(br);
+				
+				
 			} catch(Exception e) {
+				log(e.getMessage());
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				out.write("There was an error. Please check your request and try again. Error information: " + e.getMessage());
 				out.close();
-				log.info(e.getMessage());
+				  // log.info(e.getMessage());
 			}
 		}
 	}

@@ -56,8 +56,8 @@ public class DatabaseHelper {
 				pstmt.setDouble(3, reading.getTime());
 				pstmt.setDouble(4, reading.getReading());
 				pstmt.setInt(5, reading.getTimeZoneOffset());
-				pstmt.setString(6, reading.getAndroidId());
-				pstmt.setString(7, reading.getSharingPrivacy());
+				pstmt.setString(6, reading.getSharingPrivacy());
+				pstmt.setString(7, reading.getAndroidId());
 				pstmt.execute();
 				//log.info("updating " + reading.getAndroidId() + " to " + reading.getReading());
 			} else {
