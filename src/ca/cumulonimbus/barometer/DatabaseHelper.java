@@ -50,19 +50,20 @@ public class DatabaseHelper {
 			log.info("adding a reading. existing entries for id: " + readings.size());
 			if(readings.size() > 0) {
 				// Exists. Update.
-				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=?, privacy=? WHERE text=?");
+				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=?, privacy=?, client_key=? WHERE text=?");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
 				pstmt.setDouble(4, reading.getReading());
 				pstmt.setInt(5, reading.getTimeZoneOffset());
 				pstmt.setString(6, reading.getSharingPrivacy());
-				pstmt.setString(7, reading.getAndroidId());
+				pstmt.setString(7, reading.getClientKey());
+				pstmt.setString(8, reading.getAndroidId());
 				pstmt.execute();
 				//log.info("updating " + reading.getAndroidId() + " to " + reading.getReading());
 			} else {
 				// Doesn't exist. Insert a new row.
-				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text, privacy) values (?, ?, ?, ?, ?, ?, ?)");
+				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key) values (?, ?, ?, ?, ?, ?, ?, ?)");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
@@ -70,12 +71,13 @@ public class DatabaseHelper {
 				pstmt.setInt(5, reading.getTimeZoneOffset());
 				pstmt.setString(6, reading.getAndroidId());
 				pstmt.setString(7, reading.getSharingPrivacy());
+				pstmt.setString(8, reading.getClientKey());
 				pstmt.execute();
 				//log.info("inserting new " + reading.getAndroidId());
 			}
 			
 			// Either way, add it to the archive.
-			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text, privacy) values (?, ?, ?, ?, ?, ?, ?)");
+			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key) values (?, ?, ?, ?, ?, ?, ?, ?)");
 			pstmt.setDouble(1, reading.getLatitude());
 			pstmt.setDouble(2, reading.getLongitude());
 			pstmt.setDouble(3, reading.getTime());
@@ -83,6 +85,7 @@ public class DatabaseHelper {
 			pstmt.setInt(5, reading.getTimeZoneOffset());
 			pstmt.setString(6, reading.getAndroidId());
 			pstmt.setString(7, reading.getSharingPrivacy());
+			pstmt.setString(8, reading.getClientKey());
 			pstmt.execute();
 			//log.info("archiving " + reading.getAndroidId());
 			
@@ -149,90 +152,6 @@ public class DatabaseHelper {
 		}
 		
 		return users;
-	}
-	
-	// Return tendency in simple terms for a given user id
-	public String getSimpleTendencyFromUserID(String userID) {
-
-		try {
-			String tendency = "Unknown";
-			long sinceWhen = Calendar.getInstance().getTimeInMillis() - (long)(TENDENCY_HOURS * 60 * 60 * 1000);
-			// this result comes sorted by time
-			ArrayList<UserCollection> ucs = getReadingsByUserAndTime(userID, sinceWhen, "mbar");
-			
-			UserCollection singleUser = ucs.get(0); // when including a legit user id, only one result will returned
-			// ignore anything older than 5 hours, look for delta 
-			// greater than 3.5 mbar
-			ArrayList<BarometerReading> originalList = singleUser.getAllReadings();
-
-
-			double firstReading = originalList.get(0).getReading();
-			double lastReading = originalList.get(originalList.size() - 1).getReading();
-			//log.info(firstReading + " " + lastReading);
-			//log.info("is " + Math.abs(firstReading - lastReading) + " greater than  " +  TENDENCY_DELTA);
-			if(Math.abs(firstReading - lastReading) > TENDENCY_DELTA) { 
-				if(firstReading<lastReading) {
-					tendency = "Rising";
-				} else if (firstReading>lastReading) {
-					tendency = "Falling";
-				} else {
-					tendency = "Steady";
-				}
-			}
-			//log.info(tendency);
-			return tendency;
-		} catch(Exception e) {
-			log.info("tendency error: " + e.getMessage());
-			return "Unknown";
-		}
-	}
-	
-	
-	private int findNewReadings(ArrayList<BarometerReading> archive, int days) {
-		int total = 0;
-		for(BarometerReading single : archive) {
-			double dateCutoff = Calendar.getInstance().getTimeInMillis() - daysToMs(days); // Now - days in millis
-			if(single.getTime()>dateCutoff) {
-				total++;
-			}
-		}
-		
-		return total;
-	}
-
-	public String generateStatisticsForUsers() {
-		String allUsers =  "";
-		String serverURL = ""; //BarometerServlet?statistics=by_user&user_id=";
-		try {
-			pstmt = db.prepareStatement("select * from archive");
-			ResultSet rs = pstmt.executeQuery();
-			ArrayList<BarometerReading> archive = new ArrayList<BarometerReading>();
-			while(rs.next()) {
-				archive.add(resultSetToBarometerReading(rs));
-			}
-			ArrayList<UserCollection> users = new ArrayList<UserCollection>();
-
-			users = getUCFromArchive(archive);
-			
-			allUsers = "Total: " + users.size() + "<hr/>";
-			for(UserCollection user : users) {
-				allUsers += "<a href='" + serverURL + user.getId() + "'>" + user.getId() + "</a>: " + user.getAllReadings().size() + "<br/>";
-			}
-			
-		} catch(SQLException sqle) {
-			log.info(sqle.getMessage());
-		}
-		return allUsers;
-	}
-	
-	private int findMultipleSubmissions(ArrayList<UserCollection> users) {
-		int total = 0;
-		for(UserCollection user : users) {
-			if(user.getAllReadings().size()>=2) {
-				total++;
-			}
-		}
-		return total;
 	}
 	
 	public boolean deleteUserData(String userID) {
@@ -330,21 +249,6 @@ public class DatabaseHelper {
 		return uc;
 	}
 	
-	public String getUserPercentile(String userId) {
-		String percentile = "";
-		if(!connected) {
-			connectToDatabase();
-		}
-		try {
-
-			
-		} catch(Exception e) {
-			
-		}
-		
-		return percentile;
-	}
-	
 	// Return a set of useful information from a single user
 	public String generateStatisticsByUserAndTime(String userId, long sinceWhen) {
 		String stats = "";
@@ -394,59 +298,6 @@ public class DatabaseHelper {
 		
 		return "Service not yet implemented.";
 	}
-
-	
-	/**
-	 * 
-	 * THE NEW PRESSURENET (v3)
-	 * 
-	 */
-	
-	public ArrayList<TrendWindow> getTrends() {
-		ArrayList<TrendWindow> trends = new ArrayList<TrendWindow>();
-		/*
-		try {
-			pstmt = db.prepareStatement("SELECT * FROM Trends");
-			ResultSet rs = pstmt.executeQuery();
-			while(rs.next()) {
-				double[] region = {rs.getDouble("minlatitude"), rs.getDouble("maxlatitude"), rs.getDouble("minlongitude"),rs.getDouble("maxlongitude")};
-				Window window = new Window(region);
-				TrendWindow trend = new TrendWindow(rs.getString("trend"), window);
-				trends.add(trend);
-			}
-			log.info("fetched trends");
-			return trends;
-		} catch (SQLException sqle) {
-			log.info(sqle.getMessage());
-			return trends;
-		}
-		*/
-		return trends;
-	}
-	
-
-	public void saveTrends(ArrayList<TrendWindow> trendWindows) {
-		clearTrends();
-		try {
-			for(TrendWindow trend : trendWindows) {
-				pstmt = db.prepareStatement("INSERT INTO Trends (minlatitude, maxlatitude, minlongitude, maxlongitude, trend, archiveid) values (?, ?, ?, ?, ?, ?)");
-				pstmt.setDouble(1, trend.window.minLatitude);
-				pstmt.setDouble(2, trend.window.maxLatitude);
-				pstmt.setDouble(3, trend.window.minLongitude);
-				pstmt.setDouble(4, trend.window.maxLongitude);
-				pstmt.setString(5, trend.trend);
-				pstmt.setInt(6, -1);
-				
-				pstmt.execute();
-				
-			} 
-			log.info("updated " + trendWindows.size() + " trends");
-		} catch (SQLException sqle) {
-			log.info(sqle.getMessage());
-		}
-	}
-
-	
 	
 	// Return a set of useful information from all the data in the archive
 	public ArrayList<BarometerReading> getRecentArchive() {
@@ -486,8 +337,6 @@ public class DatabaseHelper {
 		return archive;
 	}
 	
-	
-
 	// table is usually "readings" for only-single-datapoints, "archive" for historical user values
 	public int getReadingCountWithinRegion(double[] region, long sinceWhen, String table ) {
 		if(!connected) {
@@ -519,9 +368,7 @@ public class DatabaseHelper {
 		}
 	}
 	
-	
-	
-	// table is usually "readings" for only-single-datapoints, "archive" for historical user values
+	// table is "readings" for only-single-datapoints, "archive" for historical user values
 	public ArrayList<BarometerReading> getReadingsWithinRegion(double[] region, long sinceWhen, String table ) {
 		if(!connected) {
 			connectToDatabase();
@@ -577,6 +424,7 @@ public class DatabaseHelper {
 			br.setTimeZoneOffset(rs.getInt("tzoffset"));
 			br.setAndroidId(rs.getString("text"));
 			br.setSharingPrivacy(rs.getString("privacy"));
+			br.setClientKey(rs.getString("client_key"));
 			return br;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -597,22 +445,7 @@ public class DatabaseHelper {
 			br.setTimeZoneOffset(rs.getInt("tzoffset"));
 			br.setAndroidId(rs.getString("text"));
 			br.setSharingPrivacy(rs.getString("privacy"));
-			
-			// tendency
-			/*
-			long tendencyTimeAgo = (1000 * 60 * 60 * 5); // five hours
-			long tendencySinceWhen = Calendar.getInstance().getTimeInMillis() - tendencyTimeAgo; // one week ago 
-			ArrayList<UserCollection> userRecents = getReadingsByUserAndTime(rs.getString("text"),tendencyTimeAgo,"mbar");
-			ArrayList<BarometerReading> brs = new ArrayList<BarometerReading>();
-			for(UserCollection uc : userRecents) { // there will only be one since we passes a user id
-				brs = uc.getAllReadings();
-			}
-			String tendency = ScienceHandler.findTendency(brs);
-			BarometerReading.Tendency tendencyData = br.createTendency(tendency);
-		
-			
-			br.setTendency(tendencyData);
-			*/	
+			br.setClientKey(rs.getString("client_key"));
 			return br;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -694,52 +527,6 @@ public class DatabaseHelper {
 		return null;
 	}
 
-	public ArrayList<BarometerReading> getReadingsAndTendenciesWithinRegion(ArrayList<Double> region, long sinceWhen ) {
-		if(!connected) {
-			connectToDatabase();
-		}
-		ArrayList<BarometerReading> readingsList = new ArrayList<BarometerReading>();
-
-		double lat1 = region.get(0);
-		double lat2 = region.get(1);
-		double lon1 = region.get(2);
-		double lon2 = region.get(3);
-
-		long tendencyTimeAgo = (1000 * 60 * 60 * 5); // five hours
-		long tendencySinceWhen = Calendar.getInstance().getTimeInMillis() - tendencyTimeAgo; // one week ago 
-		
-		log.info("lat1: " + lat1 + ", lat2: " + lat2 + ", lon1: " + lon1 + ", lon2: " + lon2);
-		log.info(sinceWhen + " - " + Calendar.getInstance().getTimeInMillis());
-		String sql = "SELECT * FROM Readings WHERE latitude>? AND latitude<? AND longitude>? AND longitude<? and daterecorded>?";
-		try {
-			pstmt = db.prepareStatement(sql);
-			pstmt.setDouble(1, lat1);
-			pstmt.setDouble(2, lat2);
-			pstmt.setDouble(3, lon1);
-			pstmt.setDouble(4, lon2);
-			pstmt.setLong(5, tendencySinceWhen);
-			
-			ResultSet rs = pstmt.executeQuery();
-			int i = 0;
-			while(rs.next()) {
-				i++;
-				
-				//ArrayList<UserCollection> userRecents = getReadingsByUserAndTime()
-				//String tendency = ScienceHandler.findTendency(single_recents);
-				readingsList.add(resultSetToBarometerReading(rs));
-				
-				if(i>MAX) {
-					break;
-				}
-			}
-			
-			return fudgeGPSData(readingsList);
-		} catch(SQLException sqle) {
-			log.info(sqle.getMessage());
-			return null;
-		}
-	}
-	
 	public ArrayList<BarometerReading> getReadingsWithinRegion(ArrayList<Double> region, long sinceWhen ) {
 		if(!connected) {
 			connectToDatabase();
@@ -797,36 +584,20 @@ public class DatabaseHelper {
 		}
 	}
 	
-	public void clearTrends() {
-		if(!connected) {
-			connectToDatabase();
-		}
-		try {
-			pstmt = db.prepareStatement("DELETE FROM Trends;");
-			pstmt.execute();
-			
-		} catch(SQLException sqle) {
-			log.info(sqle.getMessage());
-		}
-	}
-	
 	public void create() {
 		if(!connected) {
 			connectToDatabase();
 		}
 		try {
-			pstmt = db.prepareStatement("DROP TABLE Trends;");
 			pstmt = db.prepareStatement("DROP TABLE Archive;");
 			pstmt = db.prepareStatement("DROP TABLE Readings;");
 			
 			
 			pstmt.execute();
 			
-			pstmt = db.prepareStatement("CREATE TABLE Trends (id serial,	minlatitude numeric, maxlatitude numeric, minlongitude numeric, maxlongitude numeric, trend varchar(10), archiveid integer)");
+			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100), client_key varchar(100))");
 			
-			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100))");
-			
-			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200))");
+			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), client_key varchar(100))");
 			pstmt.execute();
 		} catch(SQLException e) {
 			log.info(e.getMessage());
@@ -839,7 +610,6 @@ public class DatabaseHelper {
 			connectToDatabase();
 		}
 		try {
-			pstmt = db.prepareStatement("DELETE FROM Trends");
 			pstmt = db.prepareStatement("DELETE FROM Readings");
 			pstmt = db.prepareStatement("DELETE FROM Archive");
 			pstmt.execute();

@@ -1,11 +1,9 @@
 package ca.cumulonimbus.barometer;
 
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -15,23 +13,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
 
 public class BarometerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static String logName = "ca.cumulonimbus.barometer.BarometerServlet";
 	private static Logger log = Logger.getLogger(logName);
 	
-	String serverURL = ""; 
-	String distributionServerURL = ""; // http://localhost:8000
-	// private static double TENDENCY_HOURS = 12;
+	String serverURL = "";  
+	String distributionServerURL = "";
 	
 	private static DatabaseHelper dh;
 	
@@ -40,7 +32,7 @@ public class BarometerServlet extends HttpServlet {
 	}
 	
 	private ArrayList<BarometerReading> bufferToPNDV = new ArrayList<BarometerReading>();
-	private int sendBufferLimit = 100;
+	private int sendBufferLimit = 10;
 	
 	/**
 	 * Add to the list to send to PNDV. Send if the buffer is large (sendBufferLimit).
@@ -150,36 +142,6 @@ public class BarometerServlet extends HttpServlet {
 					out.print(barometerReadingToWeb(br));
 				}
 				out.close();
-				/*	}  else if (params.get("download")[0].equals("local_tendency_data")) {
-				double centerLat = Double.parseDouble(params.get("centerlat")[0]) / 1E6;
-				double centerLon = Double.parseDouble(params.get("centerlon")[0]) / 1E6;
-				double latSpan = Double.parseDouble(params.get("latspan")[0]) / 1E6;
-				double longSpan = Double.parseDouble(params.get("longspan")[0]) / 1E6;
-				log.info("local tendency data: " + centerLat + ", " + centerLon);
-				
-				ArrayList<Double> regionList = new ArrayList<Double>();
-				double lat1 = centerLat - latSpan / 2;
-				double lat2 = centerLat + latSpan / 2;
-				double lon1 = centerLon - longSpan / 2;
-				double lon2 = centerLon + longSpan / 2;
-				regionList.add(lat1);
-				regionList.add(lat2);
-				regionList.add(lon1);
-				regionList.add(lon2);
-				
-				long tendencyHistory = (long)(1000 * 60 * 60 * TENDENCY_HOURS);  
-				long sinceWhen = Calendar.getInstance().getTimeInMillis() - tendencyHistory ; // one week ago
-				log.info("now: " + Calendar.getInstance().getTimeInMillis() + " minus " + tendencyHistory );
-				ArrayList<BarometerReading> recentReadings = dh.getReadingsWithinRegion(regionList, sinceWhen);
-				
-				response.setContentType("text/html");
-				PrintWriter out = response.getWriter();
-				out.print("local_data_tendency return;");
-				for(BarometerReading br : recentReadings) {
-					out.print(barometerReadingTendencyToWeb(br,dh.getSimpleTendencyFromUserID(br.getAndroidId())));
-					log.info(barometerReadingTendencyToWeb(br,dh.getSimpleTendencyFromUserID(br.getAndroidId())));
-				}
-				out.close(); */
 			} else if (params.get("download")[0].equals("full_delete_request")) {
 				String userID = params.get("userid")[0];
 				log.info("full delete request for: " + userID);
@@ -188,53 +150,8 @@ public class BarometerServlet extends HttpServlet {
 				PrintWriter out = response.getWriter();
 				out.print(success);
 				out.close();
-			} else if(params.get("download")[0].equals("local_data_with_tendencies")) {
-				/*
-				double centerLat = Double.parseDouble(params.get("centerlat")[0]) / 1E6;
-				double centerLon = Double.parseDouble(params.get("centerlon")[0]) / 1E6;
-				double latSpan = Double.parseDouble(params.get("latspan")[0]) / 1E6;
-				double longSpan = Double.parseDouble(params.get("longspan")[0]) / 1E6;
-				//log.info("local data: " + centerLat + ", " + centerLon);
-				
-				ArrayList<Double> regionList = new ArrayList<Double>();
-				double lat1 = centerLat - latSpan / 2;
-				double lat2 = centerLat + latSpan / 2;
-				double lon1 = centerLon - longSpan / 2;
-				double lon2 = centerLon + longSpan / 2;
-				regionList.add(lat1);
-				regionList.add(lat2);
-				regionList.add(lon1);
-				regionList.add(lon2);
-				
-				long week = (1000 * 60 * 60 * 24 * 7);
-				long sinceWhen = Calendar.getInstance().getTimeInMillis() - week; // one week ago
-				//log.info("now: " + Calendar.getInstance().getTimeInMillis() + " minus " + week);
-
-				ArrayList<BarometerReading> recents = dh.getReadingsAndTendenciesWithinRegion(regionList, sinceWhen);
-				
-				response.setContentType("text/html");
-				PrintWriter out = response.getWriter();
-				out.print("local_data_with_tendencies return;");
-				for(BarometerReading br : recents) {
-					out.print(barometerReadingToWeb(br));
-				}
-				out.close();
-				*/
-			}
-
-		} else if(params.containsKey("analysis")) { 
-			log.info("analysis " + params.get("analysis")[0]);
-			if(params.get("analysis")[0].equals("all_trend_windows")) {
-				Analysis analysis = new Analysis();
-				
-				response.setContentType("text/html");
-				PrintWriter out = response.getWriter();
-				out.print("analysis_all_trends return;");
-			
-				out.close();
-				
-			}
-		} else if(params.containsKey("statistics")) {
+			} 
+		}  else if(params.containsKey("statistics")) {
 			log.info("statistics " + params.get("statistics")[0]);
 			if(params.get("statistics")[0].equals("by_user")) {
 				if(params.containsKey("user_id")) {
@@ -340,7 +257,6 @@ public class BarometerServlet extends HttpServlet {
 				// Send the measurement to the distribution servers
 				addToPNDV(br);
 				
-				
 			} catch(Exception e) {
 				log(e.getMessage());
 				response.setContentType("text/html");
@@ -361,19 +277,8 @@ public class BarometerServlet extends HttpServlet {
 			   br.getTime() + "," +
 			   br.getTimeZoneOffset() + "," +
 			   br.getAndroidId() + "," +
-			   br.getSharingPrivacy() + ";";
-	}
-	
-	// Prepare data to send through the web. Decoded by
-	// csvToBarometerReadings in the android app.
-	public String barometerReadingTendencyToWeb(BarometerReading br, String tendency) {
-		return br.getLatitude() + "," + 
-			   br.getLongitude() + "," +
-			   br.getReading() + "," +
-			   br.getTime() + "," +
-			   br.getTimeZoneOffset() + "," +
-			   br.getAndroidId() + "," + 
-		       tendency + ";";
+			   br.getSharingPrivacy() + 
+			   br.getClientKey() + ";";
 	}
 	
 	// Create a Barometer Reading object from a list of parameters 
@@ -386,6 +291,7 @@ public class BarometerServlet extends HttpServlet {
 		br.setReading(Double.parseDouble(params.get("reading")[0]));
 		br.setAndroidId((params.get("text")[0]));
 		br.setSharingPrivacy((params.get("share")[0]));
+		br.setClientKey(params.get("client_key")[0]);
 		
 		return br;
 	}

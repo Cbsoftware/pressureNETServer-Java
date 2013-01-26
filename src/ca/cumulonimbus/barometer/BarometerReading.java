@@ -16,47 +16,9 @@ public class BarometerReading implements Serializable {
 	double reading;
 	int timeZoneOffset;
 	String androidId;
-	Tendency tendency;
 	String sharingPrivacy;
-	
+	String clientKey;
 
-	public Tendency createTendency(String ten) {
-		Tendency t = new Tendency();
-		t.setTendency(ten);
-		return t;
-	}
-	
-	public class Tendency {
-		String tendency;
-		int timeOfMostRecent;
-		public String getTendency() {
-			return tendency;
-		}
-		public void setTendency(String tendency) {
-			this.tendency = tendency;
-		}
-		public int getTimeOfMostRecent() {
-			return timeOfMostRecent;
-		}
-		public void setTimeOfMostRecent(int timeOfMostRecent) {
-			this.timeOfMostRecent = timeOfMostRecent;
-		}
-	}
-	 
-	public Tendency getTendency() {
-		return tendency;
-	}
-
-	public void setTendency(Tendency tendency) {
-		this.tendency = tendency;
-	}
-	
-	public String getSharingPrivacy() {
-		return sharingPrivacy;
-	}
-	public void setSharingPrivacy(String sharingPrivacy) {
-		this.sharingPrivacy = sharingPrivacy;
-	}
 	public String toString() {
 		String ret = "Reading: " + reading + "\n" +
 					 "Latitude: " + latitude + "\n" + 
@@ -68,7 +30,19 @@ public class BarometerReading implements Serializable {
 		
 		return ret;
 	}
- 
+
+	public String getClientKey() {
+		return clientKey;
+	}
+	public void setClientKey(String clientKey) {
+		this.clientKey = clientKey;
+	}
+	public String getSharingPrivacy() {
+		return sharingPrivacy;
+	}
+	public void setSharingPrivacy(String sharingPrivacy) {
+		this.sharingPrivacy = sharingPrivacy;
+	}
 	public String getAndroidId() {
 		return androidId;
 	}
