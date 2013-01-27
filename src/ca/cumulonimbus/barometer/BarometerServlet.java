@@ -270,14 +270,15 @@ public class BarometerServlet extends HttpServlet {
 	
 	// Prepare data to send through the web. Decoded by
 	// csvToBarometerReadings in the android app.
+	// Since some of the data has commas, CSV = BSV
 	public String barometerReadingToWeb(BarometerReading br) {
-		return br.getLatitude() + "," + 
-			   br.getLongitude() + "," +
-			   br.getReading() + "," +
-			   br.getTime() + "," +
-			   br.getTimeZoneOffset() + "," +
-			   br.getAndroidId() + "," +
-			   br.getSharingPrivacy() + 
+		return br.getLatitude() + "|" + 
+			   br.getLongitude() + "|" +
+			   br.getReading() + "|" +
+			   br.getTime() + "|" +
+			   br.getTimeZoneOffset() + "|" +
+			   br.getAndroidId() + "|" +
+			   br.getSharingPrivacy() + "|" +
 			   br.getClientKey() + ";";
 	}
 	
