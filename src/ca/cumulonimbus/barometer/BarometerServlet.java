@@ -32,7 +32,7 @@ public class BarometerServlet extends HttpServlet {
 	}
 	
 	private ArrayList<BarometerReading> bufferToPNDV = new ArrayList<BarometerReading>();
-	private int sendBufferLimit = 10;
+	private int sendBufferLimit = 100;
 	
 	/**
 	 * Add to the list to send to PNDV. Send if the buffer is large (sendBufferLimit).
@@ -225,10 +225,10 @@ public class BarometerServlet extends HttpServlet {
 				// Should be sent as CSV or XML probably.
 				// ...HTML for now
 				try {
-					response.setContentType("text/html");
+					response.setContentType("text/plain");
 					PrintWriter out = response.getWriter();
 					for (BarometerReading br : bufferToPNDV) {
-						out.print(barometerReadingToWeb(br));
+						out.print(barometerReadingToWebPNDV(br));
 					}
 					out.close();
 					
@@ -276,6 +276,18 @@ public class BarometerServlet extends HttpServlet {
 			   br.getLongitude() + "|" +
 			   br.getReading() + "|" +
 			   br.getTime() + "|" +
+			   br.getTimeZoneOffset() + "|" +
+			   br.getAndroidId() + "|" +
+			   br.getSharingPrivacy() + "|" +
+			   br.getClientKey() + ";";
+	}
+	
+	// Shave off the milliseconds
+	public String barometerReadingToWebPNDV(BarometerReading br) {
+		return br.getLatitude() + "|" + 
+			   br.getLongitude() + "|" +
+			   br.getReading() + "|" +
+			   (br.getTime()) + "|" +
 			   br.getTimeZoneOffset() + "|" +
 			   br.getAndroidId() + "|" +
 			   br.getSharingPrivacy() + "|" +
