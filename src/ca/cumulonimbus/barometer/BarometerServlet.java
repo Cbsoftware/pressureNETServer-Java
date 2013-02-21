@@ -239,6 +239,12 @@ public class BarometerServlet extends HttpServlet {
 					// ...
 				}
 			}
+		} else if(params.containsKey("current_condition")) {
+				CurrentCondition cc = getCurrentConditionFromParams(params);
+				dh.addCurrentConditionToDatabase(cc);
+				response.setContentType("text/html");
+				PrintWriter out = response.getWriter();
+				out.close();
 		} else { 
 			try {
 				// This is #1.
@@ -308,7 +314,26 @@ public class BarometerServlet extends HttpServlet {
 		
 		return br;
 	}
-
+	
+	// Create a CurrentCondition object from a list of parameters 
+	public CurrentCondition getCurrentConditionFromParams(Map<String, String[]> params) {
+		CurrentCondition cc = new CurrentCondition();
+		cc.setLatitude(Double.parseDouble(params.get("latitude")[0]));
+		cc.setLongitude(Double.parseDouble(params.get("longitude")[0]));
+		cc.setLocation_type(params.get("location_type")[0]);
+		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
+		cc.setTime(Double.parseDouble(params.get("time")[0]));
+		cc.setTzoffset(Integer.parseInt(params.get("tzoffset")[0]));
+		cc.setGeneral_condition(params.get("general_condition")[0]);
+		// ...
+		
+		cc.setUser_id((params.get("user_id")[0]));
+		cc.setSharing_policy((params.get("sharing_policy")[0]));
+		
+		
+		return cc;
+	}
+	
     public void log(String text) {
 
     }
