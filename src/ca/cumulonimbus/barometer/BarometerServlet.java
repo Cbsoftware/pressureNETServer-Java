@@ -323,6 +323,9 @@ public class BarometerServlet extends HttpServlet {
 		cc.setLatitude(Double.parseDouble(params.get("latitude")[0]));
 		cc.setLongitude(Double.parseDouble(params.get("longitude")[0]));
 		cc.setGeneral_condition(params.get("general_condition")[0]);
+		cc.setTime(Double.parseDouble(params.get("time")[0]));
+		cc.setTzoffset(Integer.parseInt(params.get("tzoffset")[0]));
+		cc.setUser_id(params.get("user_id")[0]);
 		/*
 		cc.setLocation_type(params.get("location_type")[0]);
 		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
