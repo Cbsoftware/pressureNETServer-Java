@@ -241,12 +241,16 @@ public class BarometerServlet extends HttpServlet {
 				}
 			}
 		} else if(params.containsKey("current_condition")) {
+			log.info("receiving current condition");
+			try {
 				CurrentCondition cc = getCurrentConditionFromParams(params);
-				log.info("receiving current condition: " + cc.getGeneral_condition());				
 				dh.addCurrentConditionToDatabase(cc);
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				out.close();
+			} catch(Exception e) {
+				log.info("failed to receive condition: " + e.getMessage());
+			}
 		} else { 
 			try {
 				// This is #1.
@@ -326,15 +330,15 @@ public class BarometerServlet extends HttpServlet {
 		cc.setTime(Double.parseDouble(params.get("time")[0]));
 		cc.setTzoffset(Integer.parseInt(params.get("tzoffset")[0]));
 		cc.setUser_id(params.get("user_id")[0]);
+		cc.setPrecipitation_type(params.get("precipitation_type")[0]);
+		cc.setPrecipitation_amount(Double.parseDouble(params.get("precipitation_amount")[0]));
+		cc.setWindy(params.get("windy")[0]);
+		cc.setThunderstorm_intensity(params.get("thunderstorm_intensity")[0]);
 		/*
 		cc.setLocation_type(params.get("location_type")[0]);
 		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
-		cc.setTime(Double.parseDouble(params.get("time")[0]));
-		cc.setTzoffset(Integer.parseInt(params.get("tzoffset")[0]));
-		cc.setGeneral_condition(params.get("general_condition")[0]);
 		// ...
 		
-		cc.setUser_id((params.get("user_id")[0]));
 		cc.setSharing_policy((params.get("sharing_policy")[0]));
 		*/
 		
@@ -342,7 +346,7 @@ public class BarometerServlet extends HttpServlet {
 	}
 	
     public void log(String text) {
-
+    	log.info(text);
     }
 	
 }

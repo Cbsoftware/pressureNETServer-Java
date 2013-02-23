@@ -387,6 +387,10 @@ public class DatabaseHelper {
 			cc.setUser_id(rs.getString("user_id"));
 			cc.setTime(rs.getDouble("time"));
 			cc.setTzoffset(rs.getInt("tzoffset"));
+			cc.setWindy(rs.getString("windy"));
+			cc.setPrecipitation_type("precipitation_type");
+			cc.setPrecipitation_type("precipitation_amount");
+			cc.setThunderstorm_intensity(rs.getString("thunderstorm_intensity"));
 			return cc;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -428,7 +432,17 @@ public class DatabaseHelper {
 		}
 	}
 	
-	
+	private double thunderstormStringToDouble(String intensity) {
+		if (intensity.contains("Low")) {
+			return 0.0;
+		} else if (intensity.contains("Moderate")) {
+			return 1.0;
+		} else if (intensity.contains("Heavy")) {
+			return 2.0;
+		} else {
+			return -1.0;
+		}
+	}
 
 	public boolean addCurrentConditionToDatabase(CurrentCondition condition) {
 		if(!connected) {
@@ -459,7 +473,7 @@ public class DatabaseHelper {
 				pstmt.setString(11, condition.getPrecipitation_type());
 				pstmt.setDouble(12, condition.getPrecipitation_amount());
 				pstmt.setString(13, condition.getPrecipitation_unit());
-				pstmt.setDouble(14, 0.0);
+				pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
 				pstmt.setString(15, condition.getUser_comment());
 				pstmt.setString(16, condition.getSharing_policy());
 				pstmt.setString(17, condition.getUser_id());
@@ -480,7 +494,7 @@ public class DatabaseHelper {
 				pstmt.setString(11, condition.getPrecipitation_type());
 				pstmt.setDouble(12, condition.getPrecipitation_amount());
 				pstmt.setString(13, condition.getPrecipitation_unit());
-				pstmt.setDouble(14, 0.0);
+				pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
 				pstmt.setString(15, condition.getUser_comment());
 				pstmt.setString(16, condition.getSharing_policy());
 				pstmt.setString(17, condition.getUser_id());
@@ -505,7 +519,7 @@ public class DatabaseHelper {
 			pstmt.setString(11, condition.getPrecipitation_type());
 			pstmt.setDouble(12, condition.getPrecipitation_amount());
 			pstmt.setString(13, condition.getPrecipitation_unit());
-			pstmt.setDouble(14, 0.0);
+			pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
 			pstmt.setString(15, condition.getUser_comment());
 			pstmt.setString(16, condition.getSharing_policy());
 			pstmt.setString(17, condition.getUser_id());
