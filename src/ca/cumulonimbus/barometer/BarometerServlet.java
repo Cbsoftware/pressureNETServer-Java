@@ -49,6 +49,7 @@ public class BarometerServlet extends HttpServlet {
 			 */
 			
 			// Send the initial notice
+
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			HttpGet httpGet = new HttpGet(distributionServerURL);
 			try {
@@ -241,6 +242,7 @@ public class BarometerServlet extends HttpServlet {
 			}
 		} else if(params.containsKey("current_condition")) {
 				CurrentCondition cc = getCurrentConditionFromParams(params);
+				log.info("receiving current condition: " + cc.getGeneral_condition());				
 				dh.addCurrentConditionToDatabase(cc);
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
@@ -320,6 +322,8 @@ public class BarometerServlet extends HttpServlet {
 		CurrentCondition cc = new CurrentCondition();
 		cc.setLatitude(Double.parseDouble(params.get("latitude")[0]));
 		cc.setLongitude(Double.parseDouble(params.get("longitude")[0]));
+		cc.setGeneral_condition(params.get("general_condition")[0]);
+		/*
 		cc.setLocation_type(params.get("location_type")[0]);
 		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
 		cc.setTime(Double.parseDouble(params.get("time")[0]));
@@ -329,7 +333,7 @@ public class BarometerServlet extends HttpServlet {
 		
 		cc.setUser_id((params.get("user_id")[0]));
 		cc.setSharing_policy((params.get("sharing_policy")[0]));
-		
+		*/
 		
 		return cc;
 	}

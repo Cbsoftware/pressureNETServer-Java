@@ -424,25 +424,13 @@ public class DatabaseHelper {
 	}
 	
 
-	/**
-	 * Add a barometer reading to the database. Before inserting a new row, check to see if
-	 * this user has submitted an entry before. If so, update the row.
-	 * @param reading
-	 * @return
-	 */
 	public boolean addCurrentConditionToDatabase(CurrentCondition condition) {
 		if(!connected) {
 			connectToDatabase();
 		}
 		try {
-			ArrayList<CurrentCondition> conditions = new ArrayList<CurrentCondition>();
-			pstmt = db.prepareStatement("SELECT * FROM CurrentCondition WHERE text='" + condition.getUser_id() + "'");
-			ResultSet rs = pstmt.executeQuery();
-			while(rs.next()) {
-				conditions.add(resultSetToCurrentCondition(rs));
-			}
 			log.info("adding a condition.");
-			pstmt = db.prepareStatement("INSERT INTO CurrentCondition (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
+			pstmt = db.prepareStatement("INSERT INTO CurrentCondition (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
 			pstmt.setDouble(1, condition.getLatitude());
 			pstmt.setDouble(2, condition.getLatitude());
 			pstmt.setString(3, condition.getLocation_type());
@@ -451,19 +439,23 @@ public class DatabaseHelper {
 			pstmt.setInt(6, condition.getTzoffset());
 			pstmt.setString(7, condition.getGeneral_condition());
 			pstmt.setString(8, condition.getWindy());
-			pstmt.setString(9, condition.getCloud_type());
-			pstmt.setString(10, condition.getPrecipitation_type());
-			pstmt.setDouble(11, condition.getPrecipitation_amount());
-			pstmt.setString(12, condition.getPrecipitation_unit());
-			pstmt.setString(13, condition.getThunderstorm_intensity());
-			pstmt.setString(12, condition.getUser_comment());
-			pstmt.setString(12, condition.getSharing_policy());
-			pstmt.setString(12, condition.getUser_id());
+			pstmt.setString(9, condition.getFog_thickness());
+			pstmt.setString(10, condition.getCloud_type());
+			pstmt.setString(11, condition.getPrecipitation_type());
+			pstmt.setDouble(12, condition.getPrecipitation_amount());
+			pstmt.setString(13, condition.getPrecipitation_unit());
+			pstmt.setDouble(14, 0.0);
+			pstmt.setString(15, condition.getUser_comment());
+			pstmt.setString(16, condition.getSharing_policy());
+			pstmt.setString(17, condition.getUser_id());
 						
 			pstmt.execute();
 			return true;
 		} catch(SQLException sqle) {
-			log.info(sqle.getMessage());
+			log.info("db error: " + sqle.getMessage());
+			return false;
+		} catch(Exception e) {
+			log.info("db error: " + e.getMessage());
 			return false;
 		}
 	}	
