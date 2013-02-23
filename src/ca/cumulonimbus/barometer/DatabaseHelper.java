@@ -398,20 +398,20 @@ public class DatabaseHelper {
 		}
 	}
 
-	public ArrayList<CurrentCondition> getConditionsWithinRegion(double[] region, long sinceWhen ) {
+	public ArrayList<CurrentCondition> getConditionsWithinRegion(ArrayList<Double> region, long sinceWhen ) {
 		if(!connected) {
 			connectToDatabase();
 		}
-		ArrayList<CurrentCondition> conditionList = new ArrayList<CurrentCondition>();
+		ArrayList<CurrentCondition> conditionsList = new ArrayList<CurrentCondition>();
 
-		double lat1 = region[0];
-		double lat2 = region[1];
-		double lon1 = region[2];
-		double lon2 = region[3];
+		double lat1 = region.get(0);
+		double lat2 = region.get(1);
+		double lon1 = region.get(2);
+		double lon2 = region.get(3);
 		
 		//log.info("lat1: " + lat1 + ", lat2: " + lat2 + ", lon1: " + lon1 + ", lon2: " + lon2);
 		//log.info(sinceWhen + " - " + Calendar.getInstance().getTimeInMillis());
-		String sql = "SELECT * FROM current_conditions WHERE latitude>? AND latitude<? AND longitude>? AND longitude<? and time>?";
+		String sql = "SELECT * FROM CurrentCondition WHERE latitude>? AND latitude<? AND longitude>? AND longitude<? and time>?";
 		try {
 			pstmt = db.prepareStatement(sql);
 			pstmt.setDouble(1, lat1);
@@ -421,11 +421,15 @@ public class DatabaseHelper {
 			pstmt.setLong(5, sinceWhen);
 			
 			ResultSet rs = pstmt.executeQuery();
-			
+			int i = 0;
 			while(rs.next()) {
-				conditionList.add(resultSetToCurrentCondition(rs));
+				i++;
+				conditionsList.add(resultSetToCurrentCondition(rs));
+				if(i>MAX) {
+					break;
+				}
 			}
-			return conditionList; // fudge gps data
+			return fudgeGPSConditionsData(conditionsList);
 		} catch(SQLException sqle) {
 			log.info(sqle.getMessage());
 			return null;
@@ -623,6 +627,24 @@ public class DatabaseHelper {
 	private double daysToMs(int days) {
 		return 1000 * 60 * 60 * 24 * days;
 	}
+	
+
+	private ArrayList<CurrentCondition> fudgeGPSConditionsData(ArrayList<CurrentCondition> conditions) {
+		ArrayList<CurrentCondition> fudgedConditions = new ArrayList<CurrentCondition>();
+		for(CurrentCondition cc : conditions) {
+			double longitude = cc.getLongitude();
+			double latitude = cc.getLatitude();
+			double range = .005;
+			latitude = (latitude - range) + (int)(Math.random() * ((2 * range) + 1));
+			longitude = (longitude - range) + (int)(Math.random() * ((2 * range) + 1));
+			cc.setLatitude(latitude);
+			cc.setLongitude(longitude);
+			fudgedConditions.add(cc);
+		}
+		
+		return fudgedConditions;
+	}
+	
 	
 	private ArrayList<BarometerReading> fudgeGPSData(ArrayList<BarometerReading> readings) {
 		ArrayList<BarometerReading> fudgedReadings = new ArrayList<BarometerReading>();

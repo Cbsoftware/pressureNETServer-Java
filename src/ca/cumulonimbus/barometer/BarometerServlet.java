@@ -114,6 +114,7 @@ public class BarometerServlet extends HttpServlet {
 					out.close();
 				}
 			} else if (params.get("download")[0].equals("local_data")) {
+				log("sending local_data");
 				double centerLat = Double.parseDouble(params.get("centerlat")[0]) / 1E6;
 				double centerLon = Double.parseDouble(params.get("centerlon")[0]) / 1E6;
 				double latSpan = Double.parseDouble(params.get("latspan")[0]) / 1E6;
@@ -131,17 +132,31 @@ public class BarometerServlet extends HttpServlet {
 				regionList.add(lon2);
 				
 				long day = (1000 * 60 * 60 * 24 * 1);
-				long sinceWhen = Calendar.getInstance().getTimeInMillis() - day; // one day ago
-				//log.info("now: " + Calendar.getInstance().getTimeInMillis() + " minus " + week);
+				long shortPeriod = (1000 * 60 * 60 * 6); // last six hours
+				long sinceWhen = Calendar.getInstance().getTimeInMillis() - shortPeriod;
+				// Get the visible readings
 				ArrayList<BarometerReading> recentReadings = dh.getReadingsWithinRegion(regionList, sinceWhen);
+				// Get the visible conditions
+				ArrayList<CurrentCondition> recentConditions = dh.getConditionsWithinRegion(regionList, sinceWhen);
+
+				log("sending " + recentReadings.size() + " readings and " + recentConditions.size() + " conditions" );
 				
-				
+				// Send the Recent Readings
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				out.print("local_data return;");
 				for(BarometerReading br : recentReadings) {
 					out.print(barometerReadingToWeb(br));
 				}
+			
+				// separation
+				out.print("----------");
+				
+				// Send the Recent Conditions
+				for(CurrentCondition cc : recentConditions) {
+					out.print(currentConditionToWeb(cc));
+				}
+				
 				out.close();
 			} else if (params.get("download")[0].equals("full_delete_request")) {
 				String userID = params.get("userid")[0];
@@ -293,6 +308,22 @@ public class BarometerServlet extends HttpServlet {
 			   br.getSharingPrivacy() + "|" +
 			   br.getClientKey() + ";";
 	}
+	
+
+	public String currentConditionToWeb(CurrentCondition cc) {
+		return cc.getLatitude() + "|" + 
+			   cc.getLongitude() + "|" +
+			   cc.getGeneral_condition() + "|" +
+			   cc.getTime() + "|" +
+			   cc.getTzoffset() + "|" +
+			   cc.getWindy() + "|" +
+			   cc.getFog_thickness() + "|" +
+			   cc.getPrecipitation_type() + "|" +
+			   cc.getPrecipitation_amount() + "|" +
+			   cc.getThunderstorm_intensity() + "|" +
+			   cc.getUser_id() + ";";
+	}
+	
 	
 	// Shave off the milliseconds
 	public String barometerReadingToWebPNDV(BarometerReading br) {
