@@ -388,8 +388,8 @@ public class DatabaseHelper {
 			cc.setTime(rs.getDouble("time"));
 			cc.setTzoffset(rs.getInt("tzoffset"));
 			cc.setWindy(rs.getString("windy"));
-			cc.setPrecipitation_type("precipitation_type");
-			cc.setPrecipitation_type("precipitation_amount");
+			cc.setPrecipitation_type(rs.getString("precipitation_type"));
+			cc.setPrecipitation_amount(rs.getDouble("precipitation_amount"));
 			cc.setThunderstorm_intensity(rs.getString("thunderstorm_intensity"));
 			return cc;
 		} catch (SQLException sqle) {

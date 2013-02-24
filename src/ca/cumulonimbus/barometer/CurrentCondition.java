@@ -27,6 +27,11 @@ public class CurrentCondition {
 	private String sharing_policy;
 	private String user_comment;
 	
+	@Override
+	public String toString() {
+		return user_id + ", " + time + ", " + tzoffset + ", " + latitude + ", " + longitude + ", " + general_condition + "," + windy + ", " + 
+				precipitation_type + ", " + precipitation_amount + ", " + thunderstorm_intensity;
+	}
 	public String getUser_comment() {
 		return user_comment;
 	}
@@ -128,5 +133,5 @@ public class CurrentCondition {
 	}
 	public void setThunderstorm_intensity(String thunderstorm_intensity) {
 		this.thunderstorm_intensity = thunderstorm_intensity;
-	}	
+	}
 }

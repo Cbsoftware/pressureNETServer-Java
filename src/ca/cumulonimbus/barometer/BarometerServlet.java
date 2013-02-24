@@ -317,7 +317,6 @@ public class BarometerServlet extends HttpServlet {
 			   cc.getTime() + "|" +
 			   cc.getTzoffset() + "|" +
 			   cc.getWindy() + "|" +
-			   cc.getFog_thickness() + "|" +
 			   cc.getPrecipitation_type() + "|" +
 			   cc.getPrecipitation_amount() + "|" +
 			   cc.getThunderstorm_intensity() + "|" +
