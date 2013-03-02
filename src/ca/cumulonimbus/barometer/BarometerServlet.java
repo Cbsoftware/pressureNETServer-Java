@@ -282,7 +282,8 @@ public class BarometerServlet extends HttpServlet {
 				
 				// TO PNDV!
 				// Send the measurement to the distribution servers
-				addToPNDV(br);
+				// TODO: Re-enable
+				// addToPNDV(br);
 				
 			} catch(Exception e) {
 				log(e.getMessage());
@@ -320,6 +321,7 @@ public class BarometerServlet extends HttpServlet {
 			   cc.getPrecipitation_type() + "|" +
 			   cc.getPrecipitation_amount() + "|" +
 			   cc.getThunderstorm_intensity() + "|" +
+			   cc.getCloud_type() + "|" +
 			   cc.getUser_id() + ";";
 	}
 	
@@ -364,6 +366,7 @@ public class BarometerServlet extends HttpServlet {
 		cc.setPrecipitation_amount(Double.parseDouble(params.get("precipitation_amount")[0]));
 		cc.setWindy(params.get("windy")[0]);
 		cc.setThunderstorm_intensity(params.get("thunderstorm_intensity")[0]);
+		cc.setCloud_type(params.get("cloud_type")[0]);
 		/*
 		cc.setLocation_type(params.get("location_type")[0]);
 		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
