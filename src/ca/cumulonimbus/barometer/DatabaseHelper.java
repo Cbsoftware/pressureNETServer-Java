@@ -7,12 +7,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
+import java.util.Random;
 import java.util.logging.Logger;
-
-import ca.cumulonimbus.barometer.BarometerReading;
 
 public class DatabaseHelper {
 
@@ -634,9 +632,11 @@ public class DatabaseHelper {
 		for(CurrentCondition cc : conditions) {
 			double longitude = cc.getLongitude();
 			double latitude = cc.getLatitude();
-			double range = .005;
-			latitude = (latitude - range) + (int)(Math.random() * ((2 * range) + 1));
-			longitude = (longitude - range) + (int)(Math.random() * ((2 * range) + 1));
+			double range = .01;
+			Random lat = new Random(Long.parseLong(cc.getUser_id().substring(0, 4),16));
+			Random lon = new Random(Long.parseLong(cc.getUser_id().substring(0, 4),16));
+			latitude = (latitude - range) + (int)(lat.nextDouble()) * ((2 * range) + 1);
+			longitude = (longitude - range) + (int)(lon.nextDouble() * ((2 * range) + 1));
 			cc.setLatitude(latitude);
 			cc.setLongitude(longitude);
 			fudgedConditions.add(cc);
@@ -645,15 +645,16 @@ public class DatabaseHelper {
 		return fudgedConditions;
 	}
 	
-	
 	private ArrayList<BarometerReading> fudgeGPSData(ArrayList<BarometerReading> readings) {
 		ArrayList<BarometerReading> fudgedReadings = new ArrayList<BarometerReading>();
 		for(BarometerReading br : readings) {
 			double longitude = br.getLongitude();
 			double latitude = br.getLatitude();
-			double range = .005;
-			latitude = (latitude - range) + (int)(Math.random() * ((2 * range) + 1));
-			longitude = (longitude - range) + (int)(Math.random() * ((2 * range) + 1));
+			double range = .01;
+			Random lat = new Random(Long.parseLong(br.getAndroidId().substring(0, 4),16));
+			Random lon = new Random(Long.parseLong(br.getAndroidId().substring(0, 4),16));
+			latitude = (latitude - range) + (int)(lat.nextDouble()  * ((2 * range) + 1));
+			longitude = (longitude - range) + (int)(lon.nextDouble() * ((2 * range) + 1));
 			br.setLatitude(latitude);
 			br.setLongitude(longitude);
 			fudgedReadings.add(br);
