@@ -370,7 +370,6 @@ public class DatabaseHelper {
 	
 	
 	
-	
 	/* 
 	 * Current conditions
 	 */
@@ -391,6 +390,7 @@ public class DatabaseHelper {
 			cc.setPrecipitation_type(rs.getString("precipitation_type"));
 			cc.setPrecipitation_amount(rs.getDouble("precipitation_amount"));
 			cc.setThunderstorm_intensity(rs.getString("thunderstorm_intensity"));
+			cc.setCloud_type(rs.getString("cloud_type"));
 			return cc;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
