@@ -322,6 +322,7 @@ public class BarometerServlet extends HttpServlet {
 			   cc.getPrecipitation_amount() + "|" +
 			   cc.getThunderstorm_intensity() + "|" +
 			   cc.getCloud_type() + "|" +
+			   cc.getFog_thickness() + "|" +
 			   cc.getUser_id() + ";";
 	}
 	
@@ -367,6 +368,7 @@ public class BarometerServlet extends HttpServlet {
 		cc.setWindy(params.get("windy")[0]);
 		cc.setThunderstorm_intensity(params.get("thunderstorm_intensity")[0]);
 		cc.setCloud_type(params.get("cloud_type")[0]);
+		cc.setFog_thickness(params.get("foggy")[0]);
 		/*
 		cc.setLocation_type(params.get("location_type")[0]);
 		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
