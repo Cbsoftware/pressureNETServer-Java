@@ -140,7 +140,7 @@ public class BarometerServlet extends HttpServlet {
 				// Get the visible readings
 				ArrayList<BarometerReading> recentReadings = dh.getReadingsWithinRegion(regionList, sinceWhen);
 				// Get the visible conditions
-				ArrayList<CurrentCondition> recentConditions = dh.getConditionsWithinRegion(regionList, sinceWhen);
+				ArrayList<CurrentCondition> recentConditions = dh.getConditionsWithinRegion(regionList, sinceWhenConditions);
 
 				log("sending " + recentReadings.size() + " readings and " + recentConditions.size() + " conditions" );
 				
