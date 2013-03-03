@@ -49,6 +49,7 @@ public class BarometerServlet extends HttpServlet {
 			 */
 			
 			// Send the initial notice
+
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			HttpGet httpGet = new HttpGet(distributionServerURL);
 			try {
@@ -113,6 +114,7 @@ public class BarometerServlet extends HttpServlet {
 					out.close();
 				}
 			} else if (params.get("download")[0].equals("local_data")) {
+				log("sending local_data");
 				double centerLat = Double.parseDouble(params.get("centerlat")[0]) / 1E6;
 				double centerLon = Double.parseDouble(params.get("centerlon")[0]) / 1E6;
 				double latSpan = Double.parseDouble(params.get("latspan")[0]) / 1E6;
@@ -130,17 +132,34 @@ public class BarometerServlet extends HttpServlet {
 				regionList.add(lon2);
 				
 				long day = (1000 * 60 * 60 * 24 * 1);
-				long sinceWhen = Calendar.getInstance().getTimeInMillis() - day; // one day ago
-				//log.info("now: " + Calendar.getInstance().getTimeInMillis() + " minus " + week);
+				long shortPeriod = (1000 * 60 * 60 * 6); // last six hours
+				long shortConditionsPeriod = (1000 * 60 * 60 * 1); // last one hour
+				long sinceWhen = Calendar.getInstance().getTimeInMillis() - shortPeriod;
+				long sinceWhenConditions = Calendar.getInstance().getTimeInMillis() - shortConditionsPeriod;
+				
+				// Get the visible readings
 				ArrayList<BarometerReading> recentReadings = dh.getReadingsWithinRegion(regionList, sinceWhen);
+				// Get the visible conditions
+				ArrayList<CurrentCondition> recentConditions = dh.getConditionsWithinRegion(regionList, sinceWhenConditions);
+
+				log("sending " + recentReadings.size() + " readings and " + recentConditions.size() + " conditions" );
 				
-				
+				// Send the Recent Readings
 				response.setContentType("text/html");
 				PrintWriter out = response.getWriter();
 				out.print("local_data return;");
 				for(BarometerReading br : recentReadings) {
 					out.print(barometerReadingToWeb(br));
 				}
+			
+				// separation
+				out.print("----------");
+				
+				// Send the Recent Conditions
+				for(CurrentCondition cc : recentConditions) {
+					out.print(currentConditionToWeb(cc));
+				}
+				
 				out.close();
 			} else if (params.get("download")[0].equals("full_delete_request")) {
 				String userID = params.get("userid")[0];
@@ -239,6 +258,17 @@ public class BarometerServlet extends HttpServlet {
 					// ...
 				}
 			}
+		} else if(params.containsKey("current_condition")) {
+			log.info("receiving current condition");
+			try {
+				CurrentCondition cc = getCurrentConditionFromParams(params);
+				dh.addCurrentConditionToDatabase(cc);
+				response.setContentType("text/html");
+				PrintWriter out = response.getWriter();
+				out.close();
+			} catch(Exception e) {
+				log.info("failed to receive condition: " + e.getMessage());
+			}
 		} else { 
 			try {
 				// This is #1.
@@ -255,7 +285,8 @@ public class BarometerServlet extends HttpServlet {
 				
 				// TO PNDV!
 				// Send the measurement to the distribution servers
-				addToPNDV(br);
+				// TODO: Re-enable
+				// addToPNDV(br);
 				
 			} catch(Exception e) {
 				log(e.getMessage());
@@ -281,6 +312,23 @@ public class BarometerServlet extends HttpServlet {
 			   br.getSharingPrivacy() + "|" +
 			   br.getClientKey() + ";";
 	}
+	
+
+	public String currentConditionToWeb(CurrentCondition cc) {
+		return cc.getLatitude() + "|" + 
+			   cc.getLongitude() + "|" +
+			   cc.getGeneral_condition() + "|" +
+			   cc.getTime() + "|" +
+			   cc.getTzoffset() + "|" +
+			   cc.getWindy() + "|" +
+			   cc.getPrecipitation_type() + "|" +
+			   cc.getPrecipitation_amount() + "|" +
+			   cc.getThunderstorm_intensity() + "|" +
+			   cc.getCloud_type() + "|" +
+			   cc.getFog_thickness() + "|" +
+			   cc.getUser_id() + ";";
+	}
+	
 	
 	// Shave off the milliseconds
 	public String barometerReadingToWebPNDV(BarometerReading br) {
@@ -308,9 +356,35 @@ public class BarometerServlet extends HttpServlet {
 		
 		return br;
 	}
-
+	
+	// Create a CurrentCondition object from a list of parameters 
+	public CurrentCondition getCurrentConditionFromParams(Map<String, String[]> params) {
+		CurrentCondition cc = new CurrentCondition();
+		cc.setLatitude(Double.parseDouble(params.get("latitude")[0]));
+		cc.setLongitude(Double.parseDouble(params.get("longitude")[0]));
+		cc.setGeneral_condition(params.get("general_condition")[0]);
+		cc.setTime(Double.parseDouble(params.get("time")[0]));
+		cc.setTzoffset(Integer.parseInt(params.get("tzoffset")[0]));
+		cc.setUser_id(params.get("user_id")[0]);
+		cc.setPrecipitation_type(params.get("precipitation_type")[0]);
+		cc.setPrecipitation_amount(Double.parseDouble(params.get("precipitation_amount")[0]));
+		cc.setWindy(params.get("windy")[0]);
+		cc.setThunderstorm_intensity(params.get("thunderstorm_intensity")[0]);
+		cc.setCloud_type(params.get("cloud_type")[0]);
+		cc.setFog_thickness(params.get("foggy")[0]);
+		/*
+		cc.setLocation_type(params.get("location_type")[0]);
+		cc.setLocation_accuracy(Double.parseDouble(params.get("location_accuracy")[0]));
+		// ...
+		
+		cc.setSharing_policy((params.get("sharing_policy")[0]));
+		*/
+		
+		return cc;
+	}
+	
     public void log(String text) {
-
+    	log.info(text);
     }
 	
 }

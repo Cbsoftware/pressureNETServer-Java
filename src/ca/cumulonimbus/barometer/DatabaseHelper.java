@@ -7,12 +7,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
+import java.util.Random;
 import java.util.logging.Logger;
-
-import ca.cumulonimbus.barometer.BarometerReading;
 
 public class DatabaseHelper {
 
@@ -368,6 +366,176 @@ public class DatabaseHelper {
 		}
 	}
 	
+	
+	
+	/* 
+	 * Current conditions
+	 */
+	
+	public CurrentCondition resultSetToCurrentCondition(ResultSet rs) {
+		if(!connected) {
+			connectToDatabase();
+		}
+		try {
+			CurrentCondition cc = new CurrentCondition();
+			cc.setGeneral_condition(rs.getString("general_condition"));
+			cc.setLatitude(rs.getDouble("latitude"));
+			cc.setLongitude(rs.getDouble("longitude"));
+			cc.setUser_id(rs.getString("user_id"));
+			cc.setTime(rs.getDouble("time"));
+			cc.setTzoffset(rs.getInt("tzoffset"));
+			cc.setWindy(rs.getString("windy"));
+			cc.setPrecipitation_type(rs.getString("precipitation_type"));
+			cc.setPrecipitation_amount(rs.getDouble("precipitation_amount"));
+			cc.setThunderstorm_intensity(rs.getString("thunderstorm_intensity"));
+			cc.setCloud_type(rs.getString("cloud_type"));
+			return cc;
+		} catch (SQLException sqle) {
+			log.info(sqle.getMessage());
+			return null;
+		}
+	}
+
+	public ArrayList<CurrentCondition> getConditionsWithinRegion(ArrayList<Double> region, long sinceWhen ) {
+		if(!connected) {
+			connectToDatabase();
+		}
+		ArrayList<CurrentCondition> conditionsList = new ArrayList<CurrentCondition>();
+
+		double lat1 = region.get(0);
+		double lat2 = region.get(1);
+		double lon1 = region.get(2);
+		double lon2 = region.get(3);
+		
+		//log.info("lat1: " + lat1 + ", lat2: " + lat2 + ", lon1: " + lon1 + ", lon2: " + lon2);
+		//log.info(sinceWhen + " - " + Calendar.getInstance().getTimeInMillis());
+		String sql = "SELECT * FROM CurrentCondition WHERE latitude>? AND latitude<? AND longitude>? AND longitude<? and time>?";
+		try {
+			pstmt = db.prepareStatement(sql);
+			pstmt.setDouble(1, lat1);
+			pstmt.setDouble(2, lat2);
+			pstmt.setDouble(3, lon1);
+			pstmt.setDouble(4, lon2);
+			pstmt.setLong(5, sinceWhen);
+			
+			ResultSet rs = pstmt.executeQuery();
+			int i = 0;
+			while(rs.next()) {
+				i++;
+				conditionsList.add(resultSetToCurrentCondition(rs));
+				if(i>MAX) {
+					break;
+				}
+			}
+			return fudgeGPSConditionsData(conditionsList);
+		} catch(SQLException sqle) {
+			log.info(sqle.getMessage());
+			return null;
+		}
+	}
+	
+	private double thunderstormStringToDouble(String intensity) {
+		if (intensity.contains("Low")) {
+			return 0.0;
+		} else if (intensity.contains("Moderate")) {
+			return 1.0;
+		} else if (intensity.contains("Heavy")) {
+			return 2.0;
+		} else {
+			return -1.0;
+		}
+	}
+
+	public boolean addCurrentConditionToDatabase(CurrentCondition condition) {
+		if(!connected) {
+			connectToDatabase();
+		}
+		try {
+			// Check for existing ID in database
+			ArrayList<CurrentCondition> conditions = new ArrayList<CurrentCondition>();
+			pstmt = db.prepareStatement("SELECT * FROM CurrentCondition WHERE  user_id='" + condition.getUser_id() + "'");
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				conditions.add(resultSetToCurrentCondition(rs));
+			}
+			log.info("adding a condition. existing entries for id: " + conditions.size());
+			if(conditions.size() > 0) {
+				// Exists. Update.
+				pstmt = db.prepareStatement("UPDATE CurrentCondition SET latitude=?, longitude=?, location_type=?, location_accuracy=?, time=?, tzoffset=?, general_condition=?, windy=?, foggy=?, cloud_type=?, precipitation_type=?, precipitation_amount=?, precipitation_unit=?, thunderstorm_intensity=?, user_comment=?, sharing_policy=? WHERE user_id=?");
+				pstmt.setDouble(1, condition.getLatitude());
+				pstmt.setDouble(2, condition.getLongitude());
+				pstmt.setString(3, condition.getLocation_type());
+				pstmt.setDouble(4, condition.getLocation_accuracy());
+				pstmt.setDouble(5, condition.getTime());
+				pstmt.setInt(6, condition.getTzoffset());
+				pstmt.setString(7, condition.getGeneral_condition());
+				pstmt.setString(8, condition.getWindy());
+				pstmt.setString(9, condition.getFog_thickness());
+				pstmt.setString(10, condition.getCloud_type());
+				pstmt.setString(11, condition.getPrecipitation_type());
+				pstmt.setDouble(12, condition.getPrecipitation_amount());
+				pstmt.setString(13, condition.getPrecipitation_unit());
+				pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
+				pstmt.setString(15, condition.getUser_comment());
+				pstmt.setString(16, condition.getSharing_policy());
+				pstmt.setString(17, condition.getUser_id());
+				pstmt.execute();
+			} else {
+				// Doesn't exist. Insert a new row.
+				pstmt = db.prepareStatement("INSERT INTO CurrentCondition (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
+				pstmt.setDouble(1, condition.getLatitude());
+				pstmt.setDouble(2, condition.getLatitude());
+				pstmt.setString(3, condition.getLocation_type());
+				pstmt.setDouble(4, condition.getLocation_accuracy());
+				pstmt.setDouble(5, condition.getTime());
+				pstmt.setInt(6, condition.getTzoffset());
+				pstmt.setString(7, condition.getGeneral_condition());
+				pstmt.setString(8, condition.getWindy());
+				pstmt.setString(9, condition.getFog_thickness());
+				pstmt.setString(10, condition.getCloud_type());
+				pstmt.setString(11, condition.getPrecipitation_type());
+				pstmt.setDouble(12, condition.getPrecipitation_amount());
+				pstmt.setString(13, condition.getPrecipitation_unit());
+				pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
+				pstmt.setString(15, condition.getUser_comment());
+				pstmt.setString(16, condition.getSharing_policy());
+				pstmt.setString(17, condition.getUser_id());
+							
+				pstmt.execute();
+				//log.info("inserting new " + reading.getAndroidId());
+			}
+			
+			// Either way, add it to the archive.
+			log.info("archiving condition.");
+			pstmt = db.prepareStatement("INSERT INTO CurrentConditionArchive (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
+			pstmt.setDouble(1, condition.getLatitude());
+			pstmt.setDouble(2, condition.getLatitude());
+			pstmt.setString(3, condition.getLocation_type());
+			pstmt.setDouble(4, condition.getLocation_accuracy());
+			pstmt.setDouble(5, condition.getTime());
+			pstmt.setInt(6, condition.getTzoffset());
+			pstmt.setString(7, condition.getGeneral_condition());
+			pstmt.setString(8, condition.getWindy());
+			pstmt.setString(9, condition.getFog_thickness());
+			pstmt.setString(10, condition.getCloud_type());
+			pstmt.setString(11, condition.getPrecipitation_type());
+			pstmt.setDouble(12, condition.getPrecipitation_amount());
+			pstmt.setString(13, condition.getPrecipitation_unit());
+			pstmt.setDouble(14, thunderstormStringToDouble(condition.getThunderstorm_intensity()));
+			pstmt.setString(15, condition.getUser_comment());
+			pstmt.setString(16, condition.getSharing_policy());
+			pstmt.setString(17, condition.getUser_id());
+						
+			pstmt.execute();
+			return true;
+		} catch(SQLException sqle) {
+			log.info(sqle.getMessage());
+			return false;
+		}
+	}
+	
+	
+	
 	// table is "readings" for only-single-datapoints, "archive" for historical user values
 	public ArrayList<BarometerReading> getReadingsWithinRegion(double[] region, long sinceWhen, String table ) {
 		if(!connected) {
@@ -403,6 +571,7 @@ public class DatabaseHelper {
 			return null;
 		}
 	}
+		
 	
 	// Reading is stored in millibars. Convert to user-preferred unit.
 	public double convertFromMbarsToCustomUnits(double reading, String units) {
@@ -457,14 +626,35 @@ public class DatabaseHelper {
 		return 1000 * 60 * 60 * 24 * days;
 	}
 	
+
+	private ArrayList<CurrentCondition> fudgeGPSConditionsData(ArrayList<CurrentCondition> conditions) {
+		ArrayList<CurrentCondition> fudgedConditions = new ArrayList<CurrentCondition>();
+		for(CurrentCondition cc : conditions) {
+			double longitude = cc.getLongitude();
+			double latitude = cc.getLatitude();
+			double range = .01;
+			Random lat = new Random(Long.parseLong(cc.getUser_id().substring(0, 4),16));
+			Random lon = new Random(Long.parseLong(cc.getUser_id().substring(0, 4),16));
+			latitude = (latitude - range) + (int)(lat.nextDouble()) * ((2 * range) + 1);
+			longitude = (longitude - range) + (int)(lon.nextDouble() * ((2 * range) + 1));
+			cc.setLatitude(latitude);
+			cc.setLongitude(longitude);
+			fudgedConditions.add(cc);
+		}
+		
+		return fudgedConditions;
+	}
+	
 	private ArrayList<BarometerReading> fudgeGPSData(ArrayList<BarometerReading> readings) {
 		ArrayList<BarometerReading> fudgedReadings = new ArrayList<BarometerReading>();
 		for(BarometerReading br : readings) {
 			double longitude = br.getLongitude();
 			double latitude = br.getLatitude();
-			double range = .005;
-			latitude = (latitude - range) + (int)(Math.random() * ((2 * range) + 1));
-			longitude = (longitude - range) + (int)(Math.random() * ((2 * range) + 1));
+			double range = .01;
+			Random lat = new Random(Long.parseLong(br.getAndroidId().substring(0, 4),16));
+			Random lon = new Random(Long.parseLong(br.getAndroidId().substring(0, 4),16));
+			latitude = (latitude - range) + (int)(lat.nextDouble()  * ((2 * range) + 1));
+			longitude = (longitude - range) + (int)(lon.nextDouble() * ((2 * range) + 1));
 			br.setLatitude(latitude);
 			br.setLongitude(longitude);
 			fudgedReadings.add(br);
@@ -591,12 +781,14 @@ public class DatabaseHelper {
 		try {
 			pstmt = db.prepareStatement("DROP TABLE Archive;");
 			pstmt = db.prepareStatement("DROP TABLE Readings;");
-			
+			pstmt = db.prepareStatement("DROP TABLE CurrentCondition;");
+			pstmt = db.prepareStatement("DROP TABLE CurrentConditionArchive;");
 			
 			pstmt.execute();
 			
 			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100), client_key varchar(100))");
-			
+			pstmt = db.prepareStatement("CREATE TABLE CurrentCondition (id serial,	latitude numeric, longitude numeric, location_type varchar(20), location_accuracy numeric, time numeric, tzoffset int, general_condition varchar(200), windy varchar(20), foggy varchar(200), cloud_type varchar(200), precipitation_type varchar(20), precipitation_amount numeric, precipitation_unit varchar(20), thunderstorm_intensity numeric, user_comment varchar(200), sharing_policy varchar(100), user_id varchar(200))");			
+			pstmt = db.prepareStatement("CREATE TABLE CurrentConditionArchive (id serial,	latitude numeric, longitude numeric, location_type varchar(20), location_accuracy numeric, time numeric, tzoffset int, general_condition varchar(200), windy varchar(20), foggy varchar(200), cloud_type varchar(200), precipitation_type varchar(20), precipitation_amount numeric, precipitation_unit varchar(20), thunderstorm_intensity numeric, user_comment varchar(200), sharing_policy varchar(100), user_id varchar(200))");
 			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), client_key varchar(100))");
 			pstmt.execute();
 		} catch(SQLException e) {
@@ -612,6 +804,9 @@ public class DatabaseHelper {
 		try {
 			pstmt = db.prepareStatement("DELETE FROM Readings");
 			pstmt = db.prepareStatement("DELETE FROM Archive");
+			pstmt = db.prepareStatement("DELETE FROM CurrentCondition");
+			pstmt = db.prepareStatement("DELETE FROM CurrentConditionArchive");
+			
 			pstmt.execute();
 		} catch(SQLException sqle) {
 			log.info(sqle.getMessage());
