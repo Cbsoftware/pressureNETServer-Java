@@ -22,6 +22,8 @@ public class Unit {
 				return valueInMb;
 			} else if(abbrev.contains("atm")) {
 				return valueInMb * 0.000986923;
+			} else if(abbrev.contains("kPa")) {
+				return valueInMb * 0.1;
 			} else if(abbrev.contains("mmHg")) {
 				return valueInMb * 0.75006;
 			} else if(abbrev.contains("inHg")) {
