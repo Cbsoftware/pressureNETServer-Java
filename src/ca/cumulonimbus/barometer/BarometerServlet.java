@@ -133,7 +133,10 @@ public class BarometerServlet extends HttpServlet {
 				
 				long day = (1000 * 60 * 60 * 24 * 1);
 				long shortPeriod = (1000 * 60 * 60 * 6); // last six hours
+				long shortConditionsPeriod = (1000 * 60 * 60 * 1); // last one hour
 				long sinceWhen = Calendar.getInstance().getTimeInMillis() - shortPeriod;
+				long sinceWhenConditions = Calendar.getInstance().getTimeInMillis() - shortConditionsPeriod;
+				
 				// Get the visible readings
 				ArrayList<BarometerReading> recentReadings = dh.getReadingsWithinRegion(regionList, sinceWhen);
 				// Get the visible conditions
