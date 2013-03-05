@@ -48,7 +48,7 @@ public class DatabaseHelper {
 			log.info("adding a reading. existing entries for id: " + readings.size());
 			if(readings.size() > 0) {
 				// Exists. Update.
-				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=?, privacy=?, client_key=? WHERE text=?");
+				pstmt = db.prepareStatement("UPDATE Readings SET latitude=?, longitude=?, daterecorded=?, reading=?, tzoffset=?, privacy=?, client_key=?, location_accuracy=?, reading_accuracy=? WHERE text=?");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
@@ -56,12 +56,14 @@ public class DatabaseHelper {
 				pstmt.setInt(5, reading.getTimeZoneOffset());
 				pstmt.setString(6, reading.getSharingPrivacy());
 				pstmt.setString(7, reading.getClientKey());
-				pstmt.setString(8, reading.getAndroidId());
+				pstmt.setFloat(8, reading.getLocationAccuracy());
+				pstmt.setFloat(9, reading.getReadingAccuracy());
+				pstmt.setString(10, reading.getAndroidId());
 				pstmt.execute();
 				//log.info("updating " + reading.getAndroidId() + " to " + reading.getReading());
 			} else {
 				// Doesn't exist. Insert a new row.
-				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key) values (?, ?, ?, ?, ?, ?, ?, ?)");
+				pstmt = db.prepareStatement("INSERT INTO Readings (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key, location_accuracy, reading_accuracy) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 				pstmt.setDouble(1, reading.getLatitude());
 				pstmt.setDouble(2, reading.getLongitude());
 				pstmt.setDouble(3, reading.getTime());
@@ -70,12 +72,14 @@ public class DatabaseHelper {
 				pstmt.setString(6, reading.getAndroidId());
 				pstmt.setString(7, reading.getSharingPrivacy());
 				pstmt.setString(8, reading.getClientKey());
+				pstmt.setFloat(9, reading.getLocationAccuracy());
+				pstmt.setFloat(10, reading.getReadingAccuracy());
 				pstmt.execute();
 				//log.info("inserting new " + reading.getAndroidId());
 			}
 			
 			// Either way, add it to the archive.
-			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key) values (?, ?, ?, ?, ?, ?, ?, ?)");
+			pstmt = db.prepareStatement("INSERT INTO archive (latitude, longitude, daterecorded, reading, tzoffset, text, privacy, client_key, location_accuracy, reading_accuracy) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			pstmt.setDouble(1, reading.getLatitude());
 			pstmt.setDouble(2, reading.getLongitude());
 			pstmt.setDouble(3, reading.getTime());
@@ -84,6 +88,8 @@ public class DatabaseHelper {
 			pstmt.setString(6, reading.getAndroidId());
 			pstmt.setString(7, reading.getSharingPrivacy());
 			pstmt.setString(8, reading.getClientKey());
+			pstmt.setFloat(9, reading.getLocationAccuracy());
+			pstmt.setFloat(10, reading.getReadingAccuracy());
 			pstmt.execute();
 			//log.info("archiving " + reading.getAndroidId());
 			
@@ -594,6 +600,8 @@ public class DatabaseHelper {
 			br.setAndroidId(rs.getString("text"));
 			br.setSharingPrivacy(rs.getString("privacy"));
 			br.setClientKey(rs.getString("client_key"));
+			br.setLocationAccuracy(rs.getFloat("location_accuracy"));
+			br.setReadingAccuracy(rs.getFloat("reading_accuracy"));
 			return br;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -615,6 +623,8 @@ public class DatabaseHelper {
 			br.setAndroidId(rs.getString("text"));
 			br.setSharingPrivacy(rs.getString("privacy"));
 			br.setClientKey(rs.getString("client_key"));
+			br.setLocationAccuracy(rs.getFloat("location_accuracy"));
+			br.setReadingAccuracy(rs.getFloat("reading_accuracy"));
 			return br;
 		} catch (SQLException sqle) {
 			log.info(sqle.getMessage());
@@ -786,10 +796,10 @@ public class DatabaseHelper {
 			
 			pstmt.execute();
 			
-			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100), client_key varchar(100))");
+			pstmt = db.prepareStatement("CREATE TABLE Archive (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), privacy varchar(100), client_key varchar(100), location_accuracy numeric, reading_accuracy numeric)");
 			pstmt = db.prepareStatement("CREATE TABLE CurrentCondition (id serial,	latitude numeric, longitude numeric, location_type varchar(20), location_accuracy numeric, time numeric, tzoffset int, general_condition varchar(200), windy varchar(20), foggy varchar(200), cloud_type varchar(200), precipitation_type varchar(20), precipitation_amount numeric, precipitation_unit varchar(20), thunderstorm_intensity numeric, user_comment varchar(200), sharing_policy varchar(100), user_id varchar(200))");			
 			pstmt = db.prepareStatement("CREATE TABLE CurrentConditionArchive (id serial,	latitude numeric, longitude numeric, location_type varchar(20), location_accuracy numeric, time numeric, tzoffset int, general_condition varchar(200), windy varchar(20), foggy varchar(200), cloud_type varchar(200), precipitation_type varchar(20), precipitation_amount numeric, precipitation_unit varchar(20), thunderstorm_intensity numeric, user_comment varchar(200), sharing_policy varchar(100), user_id varchar(200))");
-			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), client_key varchar(100))");
+			pstmt = db.prepareStatement("CREATE TABLE Readings (id serial,	latitude numeric, longitude numeric, daterecorded numeric, reading numeric, tzoffset int, text varchar(200), client_key varchar(100), location_accuracy numeric, reading_accuracy numeric)");
 			pstmt.execute();
 		} catch(SQLException e) {
 			log.info(e.getMessage());

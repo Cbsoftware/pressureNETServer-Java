@@ -18,6 +18,8 @@ public class BarometerReading implements Serializable {
 	String androidId;
 	String sharingPrivacy;
 	String clientKey;
+	float locationAccuracy;
+	float readingAccuracy;
 
 	public String toString() {
 		String ret = "Reading: " + reading + "\n" +
@@ -30,7 +32,19 @@ public class BarometerReading implements Serializable {
 		
 		return ret;
 	}
-
+	
+	public float getLocationAccuracy() {
+		return locationAccuracy;
+	}
+	public void setLocationAccuracy(float locationAccuracy) {
+		this.locationAccuracy = locationAccuracy;
+	}
+	public float getReadingAccuracy() {
+		return readingAccuracy;
+	}
+	public void setReadingAccuracy(float readingAccuracy) {
+		this.readingAccuracy = readingAccuracy;
+	}
 	public String getClientKey() {
 		return clientKey;
 	}

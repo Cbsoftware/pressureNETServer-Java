@@ -22,7 +22,7 @@ public class BarometerServlet extends HttpServlet {
 	private static String logName = "ca.cumulonimbus.barometer.BarometerServlet";
 	private static Logger log = Logger.getLogger(logName);
 	
-	String serverURL = "";  
+	String serverURL = "http://ec2-50-16-183-78.compute-1.amazonaws.com:8080/BarometerNetworkServer-3.1-beta-5/BarometerServlet";  
 	String distributionServerURL = "";
 	
 	private static DatabaseHelper dh;
@@ -310,7 +310,9 @@ public class BarometerServlet extends HttpServlet {
 			   br.getTimeZoneOffset() + "|" +
 			   br.getAndroidId() + "|" +
 			   br.getSharingPrivacy() + "|" +
-			   br.getClientKey() + ";";
+			   br.getClientKey() + "|" +
+			   br.getLocationAccuracy() + "|" +
+			   br.getReadingAccuracy() + ";";
 	}
 	
 
@@ -339,7 +341,9 @@ public class BarometerServlet extends HttpServlet {
 			   br.getTimeZoneOffset() + "|" +
 			   br.getAndroidId() + "|" +
 			   br.getSharingPrivacy() + "|" +
-			   br.getClientKey() + ";";
+			   br.getClientKey() + "|" +
+			   br.getLocationAccuracy() + "|" +
+			   br.getReadingAccuracy() + ";";
 	}
 	
 	// Create a Barometer Reading object from a list of parameters 
@@ -353,6 +357,8 @@ public class BarometerServlet extends HttpServlet {
 		br.setAndroidId((params.get("text")[0]));
 		br.setSharingPrivacy((params.get("share")[0]));
 		br.setClientKey(params.get("client_key")[0]);
+		br.setLocationAccuracy(Float.parseFloat(params.get("location_accuracy")[0]));
+		br.setReadingAccuracy(Float.parseFloat(params.get("reading_accuracy")[0]));
 		
 		return br;
 	}
