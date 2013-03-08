@@ -13,7 +13,7 @@ public class ChartData {
 	private String chartCaption;
 	private String[] columns = {"Pressure"}; 
 	private ArrayList<RowInfo> rows = new ArrayList<RowInfo>();
-	private static final int MAX = 100;
+	private static final int MAX = 200;
 	
 	
 	public void addRow(double reading, long time) {
