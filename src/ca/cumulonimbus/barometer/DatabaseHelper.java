@@ -490,7 +490,7 @@ public class DatabaseHelper {
 				// Doesn't exist. Insert a new row.
 				pstmt = db.prepareStatement("INSERT INTO CurrentCondition (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
 				pstmt.setDouble(1, condition.getLatitude());
-				pstmt.setDouble(2, condition.getLatitude());
+				pstmt.setDouble(2, condition.getLongitude());
 				pstmt.setString(3, condition.getLocation_type());
 				pstmt.setDouble(4, condition.getLocation_accuracy());
 				pstmt.setDouble(5, condition.getTime());
@@ -515,7 +515,7 @@ public class DatabaseHelper {
 			log.info("archiving condition.");
 			pstmt = db.prepareStatement("INSERT INTO CurrentConditionArchive (latitude, longitude, location_type, location_accuracy, time, tzoffset, general_condition, windy, foggy, cloud_type, precipitation_type, precipitation_amount, precipitation_unit, thunderstorm_intensity, user_comment, sharing_policy, user_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)");
 			pstmt.setDouble(1, condition.getLatitude());
-			pstmt.setDouble(2, condition.getLatitude());
+			pstmt.setDouble(2, condition.getLongitude());
 			pstmt.setString(3, condition.getLocation_type());
 			pstmt.setDouble(4, condition.getLocation_accuracy());
 			pstmt.setDouble(5, condition.getTime());
