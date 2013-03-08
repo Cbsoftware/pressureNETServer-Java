@@ -169,7 +169,13 @@ public class DatabaseHelper {
 			pstmt = db.prepareStatement("delete from archive where text=?");
 			pstmt.setString(1, userID);
 			boolean deletedFromArchive = pstmt.execute();
-			if(deletedFromReadings && deletedFromArchive) {
+			pstmt = db.prepareStatement("delete from currentcondition where user_id=?");
+			pstmt.setString(1, userID);
+			boolean deletedFromCC = pstmt.execute();
+			pstmt = db.prepareStatement("delete from currentconditionarchive where user_id=?");
+			pstmt.setString(1, userID);
+			boolean deletedFromCCA = pstmt.execute();
+			if(deletedFromReadings && deletedFromArchive && deletedFromCC && deletedFromCCA) {
 				return true;
 			}
 		} catch(SQLException e) {
