@@ -22,7 +22,7 @@ public class BarometerServlet extends HttpServlet {
 	private static String logName = "ca.cumulonimbus.barometer.BarometerServlet";
 	private static Logger log = Logger.getLogger(logName);
 	
-	String serverURL = "http://ec2-50-16-183-78.compute-1.amazonaws.com:8080/BarometerNetworkServer-3.1-beta-5/BarometerServlet";  
+	String serverURL = "";  
 	String distributionServerURL = "";
 	
 	private static DatabaseHelper dh;
@@ -32,7 +32,7 @@ public class BarometerServlet extends HttpServlet {
 	}
 	
 	private ArrayList<BarometerReading> bufferToPNDV = new ArrayList<BarometerReading>();
-	private int sendBufferLimit = 100;
+	private int sendBufferLimit = 200;
 	
 	/**
 	 * Add to the list to send to PNDV. Send if the buffer is large (sendBufferLimit).
@@ -286,7 +286,7 @@ public class BarometerServlet extends HttpServlet {
 				// TO PNDV!
 				// Send the measurement to the distribution servers
 				// TODO: Re-enable
-				// addToPNDV(br);
+				addToPNDV(br);
 				
 			} catch(Exception e) {
 				log(e.getMessage());

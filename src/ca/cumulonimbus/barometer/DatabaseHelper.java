@@ -19,7 +19,7 @@ public class DatabaseHelper {
 	PreparedStatement pstmt;
 	boolean connected = false;
 
-	private static final int MAX = 100;
+	private static final int MAX = 30;
 	private static String logName = "ca.cumulonimbus.barometer.DatabaseHelper";
 	private static Logger log = Logger.getLogger(logName);
 
@@ -378,6 +378,7 @@ public class DatabaseHelper {
 	 * Current conditions
 	 */
 	
+	
 	public CurrentCondition resultSetToCurrentCondition(ResultSet rs) {
 		if(!connected) {
 			connectToDatabase();
@@ -441,9 +442,9 @@ public class DatabaseHelper {
 	}
 	
 	private double thunderstormStringToDouble(String intensity) {
-		if (intensity.contains("Low")) {
+		if (intensity.contains("Infrequent")) {
 			return 0.0;
-		} else if (intensity.contains("Moderate")) {
+		} else if (intensity.contains("Frequent")) {
 			return 1.0;
 		} else if (intensity.contains("Heavy")) {
 			return 2.0;
@@ -826,7 +827,7 @@ public class DatabaseHelper {
 	public void connectToDatabase() {
 		try {
 			Class.forName("org.postgresql.Driver");
-			String url = "jdbc:postgresql://localhost"; // LIVE: breadings // DEV: dev_archive
+			String url = "jdbc:postgresql://localhost/"; // LIVE: breadings // DEV: dev_archive
 			Properties props = new Properties();
 			props.setProperty("user","USER");
 			props.setProperty("password","PASS");
